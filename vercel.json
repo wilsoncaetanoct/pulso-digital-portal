@@ -1,1 +1,6 @@
-{ "rewrites": [ { "source": "/", "destination": "/pulso-digital-portal.html" }, { "source": "/(.*)", "destination": "/pulso-digital-portal.html" } ] }
+{
+  "rewrites": [
+    { "source": "/", "destination": "/pulso-digital-portal.html" },
+    { "source": "/(.*)", "destination": "/pulso-digital-portal.html" }
+  ]
+}
