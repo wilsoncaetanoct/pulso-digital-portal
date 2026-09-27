@@ -2002,7 +2002,12 @@ async function signUp(email, password) {
     headers: { "apikey": SUPA_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
   });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    // Raw GoTrue REST error shape: { code, error_code, msg } — not { error: { message } }
+    return { error: { message: data.msg || data.error_description || data.error_code || 'Erro desconhecido no cadastro.' }, status: res.status, raw: data };
+  }
+  return data;
 }
 
 async function signIn(email, password) {
