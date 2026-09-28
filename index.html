@@ -2321,6 +2321,12 @@ async function submitCadastro() {
       return;
     }
 
+    // Usar a sessão recém-criada para autenticar a gravação seguinte (exigido pela política RLS)
+    if (authResult.access_token) {
+      currentSession = authResult;
+      currentUser = authResult.user;
+    }
+
     // 2. Salvar dados do revendedor na tabela
     await dbInsert('revendedores', {
       tipo: cadStep1.tipo,
