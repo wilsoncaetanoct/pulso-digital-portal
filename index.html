@@ -2016,7 +2016,11 @@ async function signIn(email, password) {
     headers: { "apikey": SUPA_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
   });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    return { error: { message: data.msg || data.error_description || data.error_code || data.error || 'E-mail ou senha incorretos.' }, status: res.status, raw: data };
+  }
+  return data;
 }
 
 async function signOut() {
