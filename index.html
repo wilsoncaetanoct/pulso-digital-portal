@@ -1333,7 +1333,14 @@
 
   @media (max-width: 480px) {
     .admin-sidebar { display: none; }
-  }
+  }@media print {
+  .admin-sidebar, .site-header, .no-print { display: none !important; }
+  .admin-panel { display: none !important; }
+  .admin-panel#panel-relatorios { display: block !important; }
+  body, .admin-content, .admin-layout { background: #fff !important; color: #000 !important; }
+  table { color: #000 !important; }
+  th, td { color: #000 !important; border-color: #ccc !important; }
+}
 </style>
 </head>
 <body>
@@ -1805,27 +1812,30 @@
       <!-- RELATÓRIOS -->
       <div class="admin-panel" id="panel-relatorios">
         <div class="page-title">Relatórios</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
-          <div class="stat-card" style="cursor:pointer;" onclick="alert('Gerando relatório...')">
-            <div style="font-size:28px;margin-bottom:12px;">📋</div>
-            <div class="stat-label">Pedidos a processar</div>
-            <div style="font-size:12px;color:var(--accent);margin-top:8px;">Filtrar e imprimir →</div>
+        <div class="table-header no-print">
+          <div class="action-btns">
+            <button class="action-btn primary-action" id="rel-tab-cadastro" onclick="relatorioTab('cadastro')">Cadastro</button>
+            <button class="action-btn" id="rel-tab-pedidos" onclick="relatorioTab('pedidos')">Pedidos</button>
+            <button class="action-btn" id="rel-tab-financeiro" onclick="relatorioTab('financeiro')">Financeiro</button>
           </div>
-          <div class="stat-card" style="cursor:pointer;" onclick="alert('Gerando relatório...')">
-            <div style="font-size:28px;margin-bottom:12px;">✅</div>
-            <div class="stat-label">Pedidos finalizados</div>
-            <div style="font-size:12px;color:var(--accent);margin-top:8px;">Filtrar e imprimir →</div>
-          </div>
-          <div class="stat-card" style="cursor:pointer;" onclick="alert('Gerando relatório...')">
-            <div style="font-size:28px;margin-bottom:12px;">👥</div>
-            <div class="stat-label">Por revendedor</div>
-            <div style="font-size:12px;color:var(--accent);margin-top:8px;">Filtrar e imprimir →</div>
-          </div>
-          <div class="stat-card" style="cursor:pointer;" onclick="alert('Gerando relatório...')">
-            <div style="font-size:28px;margin-bottom:12px;">🗺️</div>
-            <div class="stat-label">Por cidade/estado</div>
-            <div style="font-size:12px;color:var(--accent);margin-top:8px;">Filtrar e imprimir →</div>
-          </div>
+          <button class="action-btn primary-action" onclick="imprimirRelatorio()">🖨 Imprimir</button>
+        </div>
+        <div class="filter-bar no-print">
+          <label style="color:var(--text-muted);font-size:13px;display:flex;align-items:center;gap:6px;">De
+            <input type="date" id="rel-data-de" class="filter-select" style="width:auto;">
+          </label>
+          <label style="color:var(--text-muted);font-size:13px;display:flex;align-items:center;gap:6px;">Até
+            <input type="date" id="rel-data-ate" class="filter-select" style="width:auto;">
+          </label>
+          <button class="action-btn" onclick="loadRelatorio()">Filtrar</button>
+          <button class="action-btn" onclick="limparFiltroRelatorio()">Limpar</button>
+        </div>
+        <div class="table-wrap">
+          <table id="rel-table">
+            <thead id="rel-thead"></thead>
+            <tbody id="rel-tbody"><tr><td style="padding:24px;color:var(--text-muted);text-align:center;">Selecione um relatório.</td></tr></tbody>
+          </table>
+          <div id="rel-total" style="text-align:right;padding:14px 16px;font-weight:600;display:none;"></div>
         </div>
       </div>
 
@@ -2894,6 +2904,168 @@ async function verItensPedido(pedidoId) {
   } catch(e) { showToast('Erro ao carregar itens.', 'error'); }
 }
 
+// ============================
+// RELATÓRIOS
+// ============================
+let relatorioAtual = 'cadastro';
+let relatorioSortKey = null;
+let relatorioSortDir = 1;
+
+const RELATORIO_COLS = {
+  cadastro: [
+    { key: 'nome', label: 'Nome do revendedor', sortable: true, type: 'text' },
+    { key: 'aprovado_em', label: 'Data da liberação', sortable: true, type: 'date' },
+    { key: 'documento', label: 'CPF ou CNPJ', sortable: false, type: 'text' },
+    { key: 'endereco', label: 'Endereço', sortable: false, type: 'text' },
+    { key: 'numero', label: 'Número', sortable: false, type: 'text' },
+    { key: 'complemento', label: 'Complemento', sortable: false, type: 'text' },
+    { key: 'bairro', label: 'Bairro', sortable: true, type: 'text' },
+    { key: 'cidade', label: 'Cidade', sortable: true, type: 'text' },
+    { key: 'estado', label: 'Estado', sortable: true, type: 'text' },
+    { key: 'cep', label: 'CEP', sortable: true, type: 'text' }
+  ],
+  pedidos: [
+    { key: 'data', label: 'Data', sortable: true, type: 'date' },
+    { key: 'horario', label: 'Horário', sortable: true, type: 'text' },
+    { key: 'revendedor_nome', label: 'Nome do revendedor', sortable: true, type: 'text' },
+    { key: 'cidade', label: 'Cidade', sortable: true, type: 'text' },
+    { key: 'estado', label: 'Estado', sortable: true, type: 'text' },
+    { key: 'aberto_em', label: 'Pedido aberto', sortable: true, type: 'date' },
+    { key: 'pago_em', label: 'Pedido pago', sortable: true, type: 'date' },
+    { key: 'enviado_em', label: 'Pedido enviado', sortable: true, type: 'date' }
+  ],
+  financeiro: [
+    { key: 'pago_em', label: 'Data', sortable: true, type: 'date' },
+    { key: 'revendedor_nome', label: 'Nome do revendedor', sortable: true, type: 'text' },
+    { key: 'total', label: 'Valor pago', sortable: true, type: 'number' }
+  ]
+};
+
+function relatorioTab(tipo) {
+  relatorioAtual = tipo;
+  relatorioSortKey = null;
+  relatorioSortDir = 1;
+  ['cadastro', 'pedidos', 'financeiro'].forEach(t => {
+    const el = document.getElementById('rel-tab-' + t);
+    if (el) el.classList.toggle('primary-action', t === tipo);
+  });
+  loadRelatorio();
+}
+
+function limparFiltroRelatorio() {
+  document.getElementById('rel-data-de').value = '';
+  document.getElementById('rel-data-ate').value = '';
+  loadRelatorio();
+}
+
+function formatarDataRel(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('pt-BR');
+}
+function formatarHoraRel(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+function formatarMoedaRel(v) {
+  return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+}
+function filtrarPeriodoRel(iso, de, ate) {
+  if (!iso) return !de && !ate;
+  const d = new Date(iso);
+  if (de && d < new Date(de + 'T00:00:00')) return false;
+  if (ate && d > new Date(ate + 'T23:59:59')) return false;
+  return true;
+}
+
+function ordenarRelatorio(key) {
+  if (relatorioSortKey === key) relatorioSortDir *= -1;
+  else { relatorioSortKey = key; relatorioSortDir = 1; }
+  loadRelatorio();
+}
+
+async function loadRelatorio() {
+  const tbody = document.getElementById('rel-tbody');
+  const thead = document.getElementById('rel-thead');
+  const totalDiv = document.getElementById('rel-total');
+  if (!tbody || !thead) return;
+  const cols = RELATORIO_COLS[relatorioAtual];
+
+  thead.innerHTML = '<tr>' + cols.map(c =>
+    `<th${c.sortable ? ` style="cursor:pointer;" onclick="ordenarRelatorio('${c.key}')"` : ''}>${c.label}${c.sortable ? (relatorioSortKey === c.key ? (relatorioSortDir === 1 ? ' ▲' : ' ▼') : ' ↕') : ''}</th>`
+  ).join('') + '</tr>';
+
+  tbody.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr>`;
+  totalDiv.style.display = 'none';
+
+  const de = document.getElementById('rel-data-de').value;
+  const ate = document.getElementById('rel-data-ate').value;
+
+  let rows = [];
+  try {
+    if (relatorioAtual === 'cadastro') {
+      const revs = await dbSelect('revendedores', 'select=nome,aprovado_em,documento,endereco,numero,complemento,bairro,cidade,estado,cep,status&status=eq.aprovado');
+      rows = (revs || []).filter(r => filtrarPeriodoRel(r.aprovado_em, de, ate));
+    } else {
+      const [pedidos, revs] = await Promise.all([
+        dbSelect('pedidos', 'select=*'),
+        dbSelect('revendedores', 'select=id,cidade,estado')
+      ]);
+      const revMap = {};
+      (revs || []).forEach(r => revMap[r.id] = r);
+      const base = (pedidos || []).map(p => ({
+        ...p,
+        data: p.created_at,
+        aberto_em: p.created_at,
+        cidade: revMap[p.revendedor_id]?.cidade || '',
+        estado: revMap[p.revendedor_id]?.estado || ''
+      }));
+      if (relatorioAtual === 'pedidos') {
+        rows = base.filter(p => filtrarPeriodoRel(p.created_at, de, ate));
+      } else {
+        rows = base.filter(p => p.pago_em && filtrarPeriodoRel(p.pago_em, de, ate));
+      }
+    }
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--danger);padding:24px;">Erro ao carregar relatório.</td></tr>`;
+    return;
+  }
+
+  if (relatorioSortKey) {
+    const col = cols.find(c => c.key === relatorioSortKey);
+    rows.sort((a, b) => {
+      let va = a[relatorioSortKey], vb = b[relatorioSortKey];
+      if (col.type === 'number') { va = Number(va) || 0; vb = Number(vb) || 0; return (va - vb) * relatorioSortDir; }
+      if (col.type === 'date') { va = va ? new Date(va).getTime() : -Infinity; vb = vb ? new Date(vb).getTime() : -Infinity; return (va - vb) * relatorioSortDir; }
+      va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase();
+      return va.localeCompare(vb) * relatorioSortDir;
+    });
+  }
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum registro encontrado.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => '<tr>' + cols.map(c => {
+    let v = r[c.key];
+    if (c.key === 'horario') v = formatarHoraRel(r.data || r.created_at);
+    else if (c.type === 'date') v = formatarDataRel(v);
+    else if (c.type === 'number') v = formatarMoedaRel(v);
+    else v = v || '—';
+    return `<td>${v}</td>`;
+  }).join('') + '</tr>').join('');
+
+  if (relatorioAtual === 'financeiro') {
+    const total = rows.reduce((s, r) => s + Number(r.total || 0), 0);
+    totalDiv.textContent = 'Total: ' + formatarMoedaRel(total);
+    totalDiv.style.display = 'block';
+  }
+}
+
+function imprimirRelatorio() {
+  window.print();
+}
+
 async function updateDashboardStats() {
   try {
     const pedidos = await dbSelect('pedidos', 'select=status');
@@ -2928,6 +3100,7 @@ function adminTab(panelId, btn) {
   btn.classList.add('active');
   if (panelId === 'panel-cadastros') loadPendentes();
   if (panelId === 'panel-pedidos') loadPedidosAdmin();
+  if (panelId === 'panel-relatorios') loadRelatorio();
 }
 
 
