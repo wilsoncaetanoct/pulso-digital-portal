@@ -1625,7 +1625,6 @@
         <div class="sidebar-label">Gestão</div>
         <button class="sidebar-item" onclick="adminTab('panel-cadastros', this)">👥 Cadastros <span class="sidebar-badge">2</span></button>
         <button class="sidebar-item" onclick="adminTab('panel-produtos', this)">🏷️ Produtos</button>
-        <button class="sidebar-item" onclick="adminTab('panel-banners', this)">🖼️ Banners</button>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Relatórios</div>
@@ -1773,39 +1772,9 @@
         <div class="table-wrap">
           <div class="table-header"><h4>Produtos cadastrados</h4></div>
           <table>
-            <thead><tr><th>Produto</th><th>Linha</th><th>Custo</th><th>Ref. PF (÷0.5)</th><th>Imagem</th><th>Ações</th></tr></thead>
-            <tbody>
-              <tr><td>EASY Wearzone</td><td>Wearzone</td><td>R$ 95,00</td><td>R$ 190,00</td><td>✅</td><td><button class="action-btn">Editar</button></td></tr>
-              <tr><td>KRON Wearzone</td><td>Wearzone</td><td>R$ 170,00</td><td>R$ 340,00</td><td>✅</td><td><button class="action-btn">Editar</button></td></tr>
-              <tr><td>W11 PRO Microwear</td><td>Microwear</td><td>R$ 114,00</td><td>R$ 228,00</td><td>✅</td><td><button class="action-btn">Editar</button></td></tr>
-              <tr><td>GS11 MINI GSWear</td><td>GSWear</td><td>R$ 75,00</td><td>R$ 150,00</td><td>✅</td><td><button class="action-btn">Editar</button></td></tr>
-            </tbody>
+            <thead><tr><th>Produto</th><th>Linha</th><th>Custo</th><th>Ref. PF (÷0.5)</th><th>Ações</th></tr></thead>
+            <tbody id="produtos-tbody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr></tbody>
           </table>
-        </div>
-      </div>
-
-      <!-- BANNERS -->
-      <div class="admin-panel" id="panel-banners">
-        <div class="page-title">Banners</div>
-        <div class="alert info">Gerencie os banners exibidos na área de revendedores.</div>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div class="reg-card">
-            <div class="reg-avatar">🖼️</div>
-            <div class="reg-info"><div class="reg-name">Banner 1 — Smartwatches</div><div class="reg-doc">Ativo · Posição 1</div></div>
-            <div class="reg-actions">
-              <button class="action-btn">⬇ Download</button>
-              <button class="action-btn primary-action">✏ Alterar</button>
-            </div>
-          </div>
-          <div class="reg-card">
-            <div class="reg-avatar">🖼️</div>
-            <div class="reg-info"><div class="reg-name">Banner 2 — Linha Wearzone</div><div class="reg-doc">Ativo · Posição 2</div></div>
-            <div class="reg-actions">
-              <button class="action-btn">⬇ Download</button>
-              <button class="action-btn primary-action">✏ Alterar</button>
-            </div>
-          </div>
-          <button class="btn-outline" style="width:auto;padding:10px 20px;margin-top:8px;">+ Incluir novo banner</button>
         </div>
       </div>
 
@@ -1861,6 +1830,24 @@
     <h3 id="modal-doc-title"></h3>
     <div id="modal-doc-content"></div>
     <button class="modal-close" onclick="closeDoc()">Fechar</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL IMAGEM PRODUTO ==================== -->
+<div class="modal-overlay" id="modal-img-edit">
+  <div class="modal-box">
+    <h3 id="img-edit-title">Editar imagem</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">Formato recomendado: 1500 × 1500 pixels.</p>
+    <div style="width:200px;height:200px;margin:0 auto 16px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;" id="img-edit-preview-wrap">
+      <span id="img-edit-preview-placeholder" style="color:var(--text-muted);font-size:13px;">Sem imagem manual</span>
+      <img id="img-edit-preview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;">
+    </div>
+    <input type="file" id="img-edit-file" accept="image/*" style="margin-bottom:16px;width:100%;">
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="action-btn primary-action" onclick="salvarImagemProduto()">Salvar imagem</button>
+      <button class="action-btn" onclick="removerImagemProduto()">Remover imagem</button>
+      <button class="action-btn" onclick="closeImgEdit()">Cancelar</button>
+    </div>
   </div>
 </div>
 
@@ -1968,8 +1955,19 @@ const PROD_IMGS = {
 };
 
 
+let PROD_IMG_OVERRIDES = {};
+
+async function carregarImagensOverride() {
+  try {
+    const rows = await dbSelect('produto_imagens', 'select=produto_id,imagem_base64');
+    (rows || []).forEach(r => { PROD_IMG_OVERRIDES[r.produto_id] = r.imagem_base64; });
+    const catalogWrap = document.getElementById('catalog-wrap');
+    if (catalogWrap && catalogWrap.innerHTML.trim()) renderCatalog('all');
+  } catch (e) { /* segue sem overrides se falhar */ }
+}
+
 function getProdImg(id) {
-  const img = PROD_IMGS[id];
+  const img = PROD_IMG_OVERRIDES[id] || PROD_IMGS[id];
   if (img) {
     return `<img src="${img}" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:4px;">`;
   }
@@ -3066,6 +3064,110 @@ function imprimirRelatorio() {
   window.print();
 }
 
+// ============================
+// PRODUTOS (ADMIN)
+// ============================
+let produtoEditandoId = null;
+let produtoEditandoNovaImg = null;
+let produtoEditandoRemover = false;
+
+function loadProdutosAdmin() {
+  const tbody = document.getElementById('produtos-tbody');
+  if (!tbody) return;
+  if (!PRODUCTS.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum produto cadastrado.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = PRODUCTS.map(p => {
+    const ref = (p.cost / 0.5).toFixed(2).replace('.', ',');
+    const custo = Number(p.cost).toFixed(2).replace('.', ',');
+    return `<tr>
+      <td>${p.name}</td>
+      <td>${p.brand}</td>
+      <td>R$ ${custo}</td>
+      <td>R$ ${ref}</td>
+      <td><button class="action-btn" onclick="editarImagemProduto('${p.id}')">Editar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function editarImagemProduto(id) {
+  produtoEditandoId = id;
+  produtoEditandoNovaImg = null;
+  produtoEditandoRemover = false;
+  const p = PRODUCTS.find(x => x.id === id);
+  document.getElementById('img-edit-title').textContent = 'Editar imagem — ' + (p ? p.name : id);
+  document.getElementById('img-edit-file').value = '';
+  const preview = document.getElementById('img-edit-preview');
+  const placeholder = document.getElementById('img-edit-preview-placeholder');
+  const atual = PROD_IMG_OVERRIDES[id];
+  if (atual) {
+    preview.src = atual;
+    preview.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    preview.style.display = 'none';
+    placeholder.style.display = 'block';
+  }
+  document.getElementById('modal-img-edit').classList.add('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('img-edit-file');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        produtoEditandoNovaImg = ev.target.result;
+        produtoEditandoRemover = false;
+        const preview = document.getElementById('img-edit-preview');
+        const placeholder = document.getElementById('img-edit-preview-placeholder');
+        preview.src = produtoEditandoNovaImg;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+});
+
+async function salvarImagemProduto() {
+  if (!produtoEditandoId) return;
+  if (!produtoEditandoNovaImg) { showToast('Escolha uma imagem primeiro.', 'warn'); return; }
+  try {
+    await supaFetch('/rest/v1/produto_imagens?on_conflict=produto_id', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify({ produto_id: produtoEditandoId, imagem_base64: produtoEditandoNovaImg, updated_at: new Date().toISOString() })
+    });
+    PROD_IMG_OVERRIDES[produtoEditandoId] = produtoEditandoNovaImg;
+    showToast('Imagem salva com sucesso!', 'success');
+    closeImgEdit();
+  } catch (e) {
+    showToast('Erro ao salvar imagem.', 'error');
+  }
+}
+
+async function removerImagemProduto() {
+  if (!produtoEditandoId) return;
+  try {
+    await supaFetch('/rest/v1/produto_imagens?produto_id=eq.' + encodeURIComponent(produtoEditandoId), { method: 'DELETE' });
+    delete PROD_IMG_OVERRIDES[produtoEditandoId];
+    showToast('Imagem removida.', 'success');
+    closeImgEdit();
+  } catch (e) {
+    showToast('Erro ao remover imagem.', 'error');
+  }
+}
+
+function closeImgEdit() {
+  document.getElementById('modal-img-edit').classList.remove('open');
+  produtoEditandoId = null;
+  produtoEditandoNovaImg = null;
+}
+
 async function updateDashboardStats() {
   try {
     const pedidos = await dbSelect('pedidos', 'select=status');
@@ -3101,6 +3203,7 @@ function adminTab(panelId, btn) {
   if (panelId === 'panel-cadastros') loadPendentes();
   if (panelId === 'panel-pedidos') loadPedidosAdmin();
   if (panelId === 'panel-relatorios') loadRelatorio();
+  if (panelId === 'panel-produtos') loadProdutosAdmin();
 }
 
 
@@ -3133,6 +3236,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // INIT
 // ============================
 updateCartUI();
+carregarImagensOverride();
 </script>
 </body>
 </html>
