@@ -1768,10 +1768,18 @@
       <!-- REVENDEDORES -->
       <div class="admin-panel" id="panel-revendedores">
         <div class="page-title">Revendedores</div>
+        <div class="filter-bar">
+          <input type="text" id="rev-busca" class="filter-select" style="width:220px;" placeholder="Pesquisar por nome..." oninput="renderRevendedoresGestao()">
+          <select id="rev-filtro-status" class="filter-select" onchange="renderRevendedoresGestao()">
+            <option value="todos">Todos</option>
+            <option value="aprovado">Somente ativos</option>
+            <option value="bloqueado">Somente bloqueados</option>
+          </select>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Cidade</th><th>Estado</th><th>Telefone</th><th>Ações</th></tr></thead>
-            <tbody id="revendedores-tbody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr></tbody>
+            <thead><tr><th>Nome</th><th>Cidade</th><th>Estado</th><th>Telefone</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="revendedores-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -3123,39 +3131,65 @@ function imprimirRelatorio() {
 // ============================
 // REVENDEDORES (GESTÃO)
 // ============================
+let revendedoresGestaoData = [];
+
 async function loadRevendedoresAdmin() {
   const tbody = document.getElementById('revendedores-tbody');
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr>`;
   try {
-    const revs = await dbSelect('revendedores', 'status=eq.aprovado&order=nome&select=id,nome,cidade,estado,telefone');
-    if (!revs || revs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum revendedor ativo.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = revs.map(r => `
+    const revs = await dbSelect('revendedores', 'status=in.(aprovado,bloqueado)&order=nome&select=id,nome,cidade,estado,telefone,status');
+    revendedoresGestaoData = revs || [];
+    renderRevendedoresGestao();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:24px;">Erro ao carregar revendedores.</td></tr>`;
+  }
+}
+
+function renderRevendedoresGestao() {
+  const tbody = document.getElementById('revendedores-tbody');
+  if (!tbody) return;
+  const busca = (document.getElementById('rev-busca').value || '').trim().toLowerCase();
+  const filtroStatus = document.getElementById('rev-filtro-status').value;
+
+  let lista = revendedoresGestaoData;
+  if (filtroStatus !== 'todos') lista = lista.filter(r => r.status === filtroStatus);
+  if (busca) lista = lista.filter(r => (r.nome || '').toLowerCase().includes(busca));
+
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum revendedor encontrado.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(r => {
+    const bloqueado = r.status === 'bloqueado';
+    const pillClass = bloqueado ? 'pending' : 'paid';
+    const pillLabel = bloqueado ? 'Bloqueado' : 'Ativo';
+    const btnLabel = bloqueado ? 'Desbloquear' : 'Bloquear';
+    const novoStatus = bloqueado ? 'aprovado' : 'bloqueado';
+    return `
       <tr>
         <td>${r.nome || '—'}</td>
         <td>${r.cidade || '—'}</td>
         <td>${r.estado || '—'}</td>
         <td>${r.telefone || '—'}</td>
+        <td><span class="status-pill ${pillClass}">${pillLabel}</span></td>
         <td>
-          <button class="action-btn" onclick="bloquearRevendedorGestao('${r.id}')">Bloquear</button>
+          <button class="action-btn" onclick="alternarBloqueioRevendedor('${r.id}', '${novoStatus}')">${btnLabel}</button>
         </td>
-      </tr>`).join('');
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:24px;">Erro ao carregar revendedores.</td></tr>`;
-  }
+      </tr>`;
+  }).join('');
 }
 
-async function bloquearRevendedorGestao(id) {
-  if (!confirm('Bloquear este revendedor? Ele não vai mais conseguir acessar o painel.')) return;
+async function alternarBloqueioRevendedor(id, novoStatus) {
+  const acao = novoStatus === 'bloqueado' ? 'bloquear' : 'desbloquear';
+  if (!confirm('Confirma ' + acao + ' este revendedor?')) return;
   try {
-    await dbUpdate('revendedores', { status: 'bloqueado' }, 'id=eq.' + id);
-    showToast('Revendedor bloqueado.', 'warn');
+    await dbUpdate('revendedores', { status: novoStatus }, 'id=eq.' + id);
+    showToast('Revendedor ' + (novoStatus === 'bloqueado' ? 'bloqueado.' : 'desbloqueado.'), 'warn');
     loadRevendedoresAdmin();
   } catch (e) {
-    showToast('Erro ao bloquear revendedor.', 'error');
+    showToast('Erro ao atualizar revendedor.', 'error');
   }
 }
 
