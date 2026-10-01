@@ -1624,6 +1624,7 @@
       <div class="sidebar-section">
         <div class="sidebar-label">Gestão</div>
         <button class="sidebar-item" onclick="adminTab('panel-cadastros', this)">👥 Cadastros <span class="sidebar-badge">2</span></button>
+        <button class="sidebar-item" onclick="adminTab('panel-revendedores', this)">🧑‍💼 Revendedores</button>
         <button class="sidebar-item" onclick="adminTab('panel-produtos', this)">🏷️ Produtos</button>
       </div>
       <div class="sidebar-section">
@@ -1764,11 +1765,21 @@
         </div>
       </div>
 
+      <!-- REVENDEDORES -->
+      <div class="admin-panel" id="panel-revendedores">
+        <div class="page-title">Revendedores</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Cidade</th><th>Estado</th><th>Telefone</th><th>Ações</th></tr></thead>
+            <tbody id="revendedores-tbody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- PRODUTOS -->
       <div class="admin-panel" id="panel-produtos">
         <div class="page-title">Produtos</div>
-        <div class="alert info">📋 Para atualizar preços: receba a nova planilha da importadora → envie para análise → confirme as mudanças → clique em ATUALIZAÇÃO.</div>
-        <button class="btn-primary" style="width:auto;padding:12px 28px;margin-bottom:20px;">🔄 ATUALIZAÇÃO — Sincronizar preços</button>
+        <div class="alert info">📋 Atualização de preços: envie a nova planilha da importadora pelo chat de suporte Pulso Digital. A tabela com os fatores de margem é gerada por lá e os valores abaixo são sincronizados na sequência.</div>
         <div class="table-wrap">
           <div class="table-header"><h4>Produtos cadastrados</h4></div>
           <table>
@@ -2142,20 +2153,64 @@ const PRODUCTS = [
   { id: 'wz-brave', cat: 'wearzone', brand: 'Wearzone', name: 'BRAVE', type: 'sw', cost: 285, emoji: '⌚', colors: ['Preto','Prata'] },
   { id: 'wz-flare', cat: 'wearzone', brand: 'Wearzone', name: 'FLARE', type: 'sw', cost: 285, emoji: '⌚', colors: ['Preto','Prata','Dourado'] },
   { id: 'wz-dune', cat: 'wearzone', brand: 'Wearzone', name: 'DUNE', type: 'sw', cost: 319, emoji: '⌚', colors: ['Bege','Preto'] },
+  { id: 'wz-horizonlite', cat: 'wearzone', brand: 'Wearzone', name: 'Horizon Lite+', type: 'sw', cost: 199, emoji: '⌚', colors: [] },
+  { id: 'wz-horizontitan', cat: 'wearzone', brand: 'Wearzone', name: 'Horizon Titan', type: 'sw', cost: 269, emoji: '⌚', colors: [] },
   // MICROWEAR
+  { id: 'mw-xv9pro', cat: 'microwear', brand: 'Microwear', name: 'XV9 PRO (Promoção)', type: 'sw', cost: 49, emoji: '⌚', colors: [] },
   { id: 'mw-s10', cat: 'microwear', brand: 'Microwear', name: 'S10', type: 'sw', cost: 58, emoji: '⌚', colors: [] },
+  { id: 'mw-s10pro', cat: 'microwear', brand: 'Microwear', name: 'S10 PRO', type: 'sw', cost: 60, emoji: '⌚', colors: [] },
+  { id: 'mw-w10', cat: 'microwear', brand: 'Microwear', name: 'W10', type: 'sw', cost: 69, emoji: '⌚', colors: [] },
+  { id: 'mw-w10pro', cat: 'microwear', brand: 'Microwear', name: 'W10 PRO', type: 'sw', cost: 80, emoji: '⌚', colors: [] },
+  { id: 'mw-w10promini', cat: 'microwear', brand: 'Microwear', name: 'W10 PRO MINI', type: 'sw', cost: 74, emoji: '⌚', colors: [] },
+  { id: 'mw-w10tmini', cat: 'microwear', brand: 'Microwear', name: 'W10T Mini', type: 'sw', cost: 66, emoji: '⌚', colors: [] },
+  { id: 'mw-w11x', cat: 'microwear', brand: 'Microwear', name: 'W11X', type: 'sw', cost: 89, emoji: '⌚', colors: [] },
+  { id: 'mw-w11mini', cat: 'microwear', brand: 'Microwear', name: 'W11 Mini', type: 'sw', cost: 92, emoji: '⌚', colors: [] },
   { id: 'mw-w11pro', cat: 'microwear', brand: 'Microwear', name: 'W11 PRO', type: 'sw', cost: 114, emoji: '⌚', colors: [] },
-  { id: 'mw-u4plus', cat: 'microwear', brand: 'Microwear', name: 'U4 PLUS', type: 'sw', cost: 88, emoji: '⌚', colors: [] },
+  { id: 'mw-w11promini', cat: 'microwear', brand: 'Microwear', name: 'W11 PRO MINI', type: 'sw', cost: 114, emoji: '⌚', colors: [] },
+  { id: 'mw-w11g', cat: 'microwear', brand: 'Microwear', name: 'W11G', type: 'sw', cost: 149, emoji: '⌚', colors: [] },
   { id: 'mw-w11ai', cat: 'microwear', brand: 'Microwear', name: 'W11 AI', type: 'sw', cost: 199, emoji: '⌚', colors: [] },
+  { id: 'mw-w29s', cat: 'microwear', brand: 'Microwear', name: 'W29S (Série 9)', type: 'sw', cost: 54, emoji: '⌚', colors: [] },
+  { id: 'mw-w29pro', cat: 'microwear', brand: 'Microwear', name: 'W29 PRO', type: 'sw', cost: 64, emoji: '⌚', colors: [] },
+  { id: 'mw-w59mini', cat: 'microwear', brand: 'Microwear', name: 'W59 Mini 2ª Geração', type: 'sw', cost: 64, emoji: '⌚', colors: [] },
+  { id: 'mw-s11', cat: 'microwear', brand: 'Microwear', name: 'S11', type: 'sw', cost: 65, emoji: '⌚', colors: [] },
+  { id: 'mw-s11pro', cat: 'microwear', brand: 'Microwear', name: 'S11 PRO', type: 'sw', cost: 84, emoji: '⌚', colors: [] },
+  { id: 'mw-s11mini', cat: 'microwear', brand: 'Microwear', name: 'S11 MINI', type: 'sw', cost: 85, emoji: '⌚', colors: [] },
+  { id: 'mw-ma27', cat: 'microwear', brand: 'Microwear', name: 'MA27', type: 'sw', cost: 84, emoji: '⌚', colors: [] },
+  { id: 'mw-ma33', cat: 'microwear', brand: 'Microwear', name: 'MA33 (Série 11)', type: 'sw', cost: 73, emoji: '⌚', colors: [] },
+  { id: 'mw-ma34', cat: 'microwear', brand: 'Microwear', name: 'MA34', type: 'sw', cost: 66, emoji: '⌚', colors: [] },
+  { id: 'mw-u4', cat: 'microwear', brand: 'Microwear', name: 'U4', type: 'sw', cost: 64, emoji: '⌚', colors: [] },
+  { id: 'mw-u4pro', cat: 'microwear', brand: 'Microwear', name: 'U4 PRO (1GB/3ATM)', type: 'sw', cost: 82, emoji: '⌚', colors: [] },
+  { id: 'mw-u4plus', cat: 'microwear', brand: 'Microwear', name: 'U4 PLUS', type: 'sw', cost: 88, emoji: '⌚', colors: [] },
+  { id: 'mw-u4mini', cat: 'microwear', brand: 'Microwear', name: 'U4 MINI', type: 'sw', cost: 74, emoji: '⌚', colors: [] },
+  { id: 'mw-u4minipro', cat: 'microwear', brand: 'Microwear', name: 'U4 MINI PRO', type: 'sw', cost: 109, emoji: '⌚', colors: [] },
+  { id: 'mw-u5', cat: 'microwear', brand: 'Microwear', name: 'U5', type: 'sw', cost: 66, emoji: '⌚', colors: [] },
+  { id: 'mw-u5x', cat: 'microwear', brand: 'Microwear', name: 'U5X', type: 'sw', cost: 74, emoji: '⌚', colors: [] },
+  { id: 'mw-u5pro', cat: 'microwear', brand: 'Microwear', name: 'U5 PRO', type: 'sw', cost: 94, emoji: '⌚', colors: [] },
+  { id: 'mw-u5plus', cat: 'microwear', brand: 'Microwear', name: 'U5 PLUS', type: 'sw', cost: 105, emoji: '⌚', colors: [] },
+  { id: 'mw-ultrau3w', cat: 'microwear', brand: 'Microwear', name: 'ULTRA U3W (ChatGPT/1GB)', type: 'sw', cost: 64, emoji: '⌚', colors: [] },
+  { id: 'mw-ultra4ai', cat: 'microwear', brand: 'Microwear', name: 'ULTRA 4 AI 4G', type: 'sw', cost: 219, emoji: '⌚', colors: [] },
+  { id: 'mw-m9', cat: 'microwear', brand: 'Microwear', name: 'M9 (GPS/AMOLED/IA)', type: 'sw', cost: 134, emoji: '⌚', colors: [] },
+  { id: 'mw-su01', cat: 'microwear', brand: 'Microwear', name: 'SU01 (3ATM/GPS)', type: 'sw', cost: 133, emoji: '⌚', colors: [] },
+  { id: 'mw-su02', cat: 'microwear', brand: 'Microwear', name: 'SU02', type: 'sw', cost: 129, emoji: '⌚', colors: [] },
+  { id: 'mw-su04', cat: 'microwear', brand: 'Microwear', name: 'SU04', type: 'sw', cost: 119, emoji: '⌚', colors: [] },
   // GSWEAR
-  { id: 'gs-gs10mini', cat: 'gswear', brand: 'GSWear', name: 'GS10 MINI', type: 'sw', cost: 68, emoji: '⌚', colors: [] },
+  { id: 'gs-gs10mini', cat: 'gswear', brand: 'GSWear', name: 'GS10 Mini (41mm)', type: 'sw', cost: 68, emoji: '⌚', colors: [] },
+  { id: 'gs-gs10ultramini', cat: 'gswear', brand: 'GSWear', name: 'GS10 Ultra Mini (41mm)', type: 'sw', cost: 68, emoji: '⌚', colors: [] },
   { id: 'gs-gs11mini', cat: 'gswear', brand: 'GSWear', name: 'GS11 MINI', type: 'sw', cost: 75, emoji: '⌚', colors: [] },
   // KIT PULSEIRAS
+  { id: 'kt-n11pro', cat: 'kit', brand: 'Kit', name: 'N11 PRO (Chamadas Bluetooth)', type: 'sw', cost: 39.99, emoji: '⌚🎁', colors: [] },
+  { id: 'kt-n11ultra', cat: 'kit', brand: 'Kit', name: 'N11 ULTRA (Chamadas Bluetooth)', type: 'sw', cost: 39.99, emoji: '⌚🎁', colors: [] },
   { id: 'kt-ws79u2', cat: 'kit', brand: 'Kit', name: 'WS-79 ULTRA 2', type: 'sw', cost: 58, emoji: '⌚🎁', colors: [] },
+  { id: 'kt-wsx10', cat: 'kit', brand: 'Kit', name: 'WS-X10 (Série 10)', type: 'sw', cost: 54, emoji: '⌚🎁', colors: [] },
+  { id: 'kt-ws105ultra', cat: 'kit', brand: 'Kit', name: 'WS10-5 ULTRA (Kit 5 Pulseiras)', type: 'sw', cost: 70, emoji: '⌚🎁', colors: [] },
   { id: 'kt-wsx11', cat: 'kit', brand: 'Kit', name: 'WS-X11 Kit 7 Pulseiras', type: 'sw', cost: 74, emoji: '⌚🎁', colors: [] },
   // FONES
   { id: 'fn-zonebuds', cat: 'fone', brand: 'Wearzone', name: 'Zone Buds 01', type: 'sw', cost: 70, emoji: '🎧', colors: ['Preto','Branco'] },
   { id: 'fn-wz06', cat: 'fone', brand: 'Wearzone', name: 'TWS WZ06', type: 'sw', cost: 90, emoji: '🎧', colors: ['Preto','Branco'] },
+  { id: 'fn-wz08', cat: 'fone', brand: 'Wearzone', name: 'HEADSET WZ08 (60h)', type: 'sw', cost: 150, emoji: '🎧', colors: [] },
+  // ÓCULOS INTELIGENTE
+  { id: 'oc-w93pro', cat: 'oculos', brand: 'Óculos', name: 'W93 PRO', type: 'sw', cost: 220, emoji: '🕶️', colors: [] },
+  { id: 'oc-w94', cat: 'oculos', brand: 'Óculos', name: 'W94', type: 'sw', cost: 59.99, emoji: '🕶️', colors: [] },
   // ACESSÓRIOS (fator fixo 0.75, min R$450)
   { id: 'ac-capinha-c', cat: 'acessorio', brand: 'Acessório', name: 'Capinha c/ Cobertura', type: 'acc', cost: 2, emoji: '🛡️', colors: [] },
   { id: 'ac-pelicula', cat: 'acessorio', brand: 'Acessório', name: 'Película para Smartwatch', type: 'acc', cost: 2, emoji: '🔲', colors: [] },
@@ -2426,6 +2481,7 @@ const CAT_LABELS = {
   gswear: '⌚ Linha GSWear',
   kit: '🎁 Kit com Pulseiras',
   fone: '🎧 Fone de Ouvido',
+  oculos: '🕶️ Óculos Inteligente',
   acessorio: '🛡️ Acessórios',
 };
 
@@ -3065,6 +3121,45 @@ function imprimirRelatorio() {
 }
 
 // ============================
+// REVENDEDORES (GESTÃO)
+// ============================
+async function loadRevendedoresAdmin() {
+  const tbody = document.getElementById('revendedores-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando...</td></tr>`;
+  try {
+    const revs = await dbSelect('revendedores', 'status=eq.aprovado&order=nome&select=id,nome,cidade,estado,telefone');
+    if (!revs || revs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum revendedor ativo.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = revs.map(r => `
+      <tr>
+        <td>${r.nome || '—'}</td>
+        <td>${r.cidade || '—'}</td>
+        <td>${r.estado || '—'}</td>
+        <td>${r.telefone || '—'}</td>
+        <td>
+          <button class="action-btn" onclick="bloquearRevendedorGestao('${r.id}')">Bloquear</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:24px;">Erro ao carregar revendedores.</td></tr>`;
+  }
+}
+
+async function bloquearRevendedorGestao(id) {
+  if (!confirm('Bloquear este revendedor? Ele não vai mais conseguir acessar o painel.')) return;
+  try {
+    await dbUpdate('revendedores', { status: 'bloqueado' }, 'id=eq.' + id);
+    showToast('Revendedor bloqueado.', 'warn');
+    loadRevendedoresAdmin();
+  } catch (e) {
+    showToast('Erro ao bloquear revendedor.', 'error');
+  }
+}
+
+// ============================
 // PRODUTOS (ADMIN)
 // ============================
 let produtoEditandoId = null;
@@ -3204,6 +3299,7 @@ function adminTab(panelId, btn) {
   if (panelId === 'panel-pedidos') loadPedidosAdmin();
   if (panelId === 'panel-relatorios') loadRelatorio();
   if (panelId === 'panel-produtos') loadProdutosAdmin();
+  if (panelId === 'panel-revendedores') loadRevendedoresAdmin();
 }
 
 
