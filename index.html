@@ -1946,7 +1946,7 @@ let PROD_IMG_OVERRIDES = {};
 
 async function carregarImagensOverride() {
   try {
-    const rows = await dbSelect('produto_imagens', 'select=produto_id,imagem_base64&_cb=' + Date.now());
+    const rows = await supaFetch('/rest/v1/produto_imagens?select=produto_id,imagem_base64', { method: 'GET', cache: 'no-store' });
     (rows || []).forEach(r => { PROD_IMG_OVERRIDES[r.produto_id] = r.imagem_base64; });
     const catalogWrap = document.getElementById('catalog-wrap');
     if (catalogWrap && catalogWrap.innerHTML.trim()) renderCatalog('all');
@@ -3191,7 +3191,7 @@ async function editarImagemProduto(id) {
   // Busca direto no banco (não confia no cache que pode não ter terminado de carregar)
   let atual = null;
   try {
-    const rows = await dbSelect('produto_imagens', 'produto_id=eq.' + encodeURIComponent(id) + '&select=imagem_base64&_cb=' + Date.now());
+    const rows = await supaFetch('/rest/v1/produto_imagens?produto_id=eq.' + encodeURIComponent(id) + '&select=imagem_base64', { method: 'GET', cache: 'no-store' });
     atual = rows && rows[0] ? rows[0].imagem_base64 : null;
     if (atual) PROD_IMG_OVERRIDES[id] = atual;
   } catch (e) {
